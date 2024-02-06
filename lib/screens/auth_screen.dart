@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+final _firebase = FirebaseAuth.instance;
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -21,12 +24,34 @@ class _AuthScreenState extends State<AuthScreen> {
 
   var _isLogin = true;
 
-  void _submit() {
+  void _submit() async {
     final isValidFormInput = _formKey.currentState!.validate();
-    if (isValidFormInput) {
-      _formKey.currentState!.save();
-      print(_enteredEmail);
-      print(_enteredPassword);
+
+    if (!isValidFormInput) {
+      return;
+    }
+
+    _formKey.currentState!.save();
+    try {
+      if (_isLogin) {
+        final userCredentials = await _firebase.signInWithEmailAndPassword(
+            email: _enteredEmail, password: _enteredPassword);
+      } else {
+        final userCredentials = await _firebase.createUserWithEmailAndPassword(
+            email: _enteredEmail, password: _enteredPassword);
+      }
+    } on FirebaseAuthException catch (userCredentialsError) {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            userCredentialsError.message ?? "Authentication Failed.",
+          ),
+        ),
+      );
     }
   }
 
@@ -142,12 +167,9 @@ class _AuthScreenState extends State<AuthScreen> {
                               ),
                               onPressed: () {
                                 _submit();
-                                setState(() {
-                                  _isLogin = !_isLogin;
-                                });
                               },
                               child: Text(
-                                _isLogin ? "Create an account" : "Login",
+                                _isLogin ? "Login" : "Signup",
                                 style: TextStyle(
                                   color: Theme.of(context)
                                       .colorScheme
@@ -167,9 +189,15 @@ class _AuthScreenState extends State<AuthScreen> {
                                 backgroundColor:
                                     Theme.of(context).colorScheme.background,
                               ),
-                              onPressed: () {},
+                              onPressed: () {
+                                setState(() {
+                                  _isLogin = !_isLogin;
+                                });
+                              },
                               child: Text(
-                                _isLogin ? "Login" : "Signup",
+                                _isLogin
+                                    ? "Create an account"
+                                    : "I already have an account",
                                 style: TextStyle(
                                   color: Theme.of(context)
                                       .colorScheme
