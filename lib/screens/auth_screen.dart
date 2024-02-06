@@ -60,7 +60,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       color: Theme.of(context).colorScheme.outline,
                       width: 5,
                     ),
-                    color: Theme.of(context).colorScheme.onBackground),
+                    color: Theme.of(context).colorScheme.outlineVariant),
                 margin: const EdgeInsets.only(
                   top: 30,
                   bottom: 20,
