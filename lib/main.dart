@@ -1,5 +1,6 @@
 import 'package:chat_app/screens/auth_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() {
   runApp(const MyApp());
@@ -22,6 +23,7 @@ class MyApp extends StatelessWidget {
             tertiary: const Color.fromARGB(255, 100, 89, 123),
             surface: const Color.fromARGB(255, 247, 249, 255),
           ),
+          textTheme: GoogleFonts.soraTextTheme(),
         ),
         home: const AuthScreen());
   }
