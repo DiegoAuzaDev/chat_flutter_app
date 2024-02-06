@@ -1,5 +1,10 @@
+import 'dart:math';
+
+import 'package:chat_app/widgets/user_image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import "dart:io";
 
 final _firebase = FirebaseAuth.instance;
 
@@ -14,6 +19,9 @@ class _AuthScreenState extends State<AuthScreen> {
   bool isVisible = false;
   var _enteredEmail = "";
   var _enteredPassword = "";
+  File? _selectedImage;
+  bool _isAuthenticating = false;
+
   final _formKey = GlobalKey<FormState>();
 
   void changeVisibleState() {
@@ -30,17 +38,33 @@ class _AuthScreenState extends State<AuthScreen> {
     if (!isValidFormInput) {
       return;
     }
+    if (!_isLogin && _selectedImage == null) {
+      return;
+    }
 
     _formKey.currentState!.save();
     try {
+      setState(() {
+        _isAuthenticating = true;
+      });
       if (_isLogin) {
         final userCredentials = await _firebase.signInWithEmailAndPassword(
             email: _enteredEmail, password: _enteredPassword);
       } else {
         final userCredentials = await _firebase.createUserWithEmailAndPassword(
             email: _enteredEmail, password: _enteredPassword);
+        final firebaseStorageRef = FirebaseStorage.instance
+            .ref()
+            .child("user_images")
+            .child("${userCredentials.user!.uid}.jpg");
+        await firebaseStorageRef.putFile(_selectedImage!);
+        final imgURl = await firebaseStorageRef.getDownloadURL();
+        print(imgURl);
       }
     } on FirebaseAuthException catch (userCredentialsError) {
+      setState(() {
+        _isAuthenticating = false;
+      });
       if (!context.mounted) {
         return;
       }
@@ -101,115 +125,150 @@ class _AuthScreenState extends State<AuthScreen> {
                 child: SingleChildScrollView(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          TextFormField(
-                            validator: (value) {
-                              if (value == null ||
-                                  value.trim().isEmpty ||
-                                  !value.contains("@")) {
-                                return "Please enter a valid email address";
-                              }
-                              return null;
-                            },
-                            onSaved: (value) {
-                              _enteredEmail = value!;
-                            },
-                            textCapitalization: TextCapitalization.none,
-                            autocorrect: false,
-                            keyboardType: TextInputType.emailAddress,
-                            decoration: const InputDecoration(
-                                labelText: "Email Address"),
-                          ),
-                          const SizedBox(
-                            height: 20,
-                          ),
-                          TextFormField(
-                            validator: (value) {
-                              if (value == null ||
-                                  value.trim().isEmpty ||
-                                  value.trim().length < 6) {
-                                return "Password must be at least 6 character long";
-                              }
-                              return null;
-                            },
-                            onSaved: (value) {
-                              _enteredPassword = value!;
-                            },
-                            obscureText: !isVisible,
-                            decoration: InputDecoration(
-                              suffixIcon: IconButton(
-                                onPressed: () {
-                                  changeVisibleState();
-                                },
-                                icon: isVisible
-                                    ? const Icon(Icons.visibility)
-                                    : const Icon(Icons.visibility_off),
-                              ),
-                              labelText: "Password",
-                            ),
-                          ),
-                          const SizedBox(
-                            height: 25,
-                          ),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    Theme.of(context).colorScheme.brightness ==
-                                            Brightness.light
-                                        ? Theme.of(context).colorScheme.primary
-                                        : Theme.of(context).colorScheme.primary,
-                              ),
-                              onPressed: () {
-                                _submit();
-                              },
-                              child: Text(
-                                _isLogin ? "Login" : "Signup",
-                                style: TextStyle(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onInverseSurface,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(
-                            height: 12,
-                          ),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    Theme.of(context).colorScheme.background,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _isLogin = !_isLogin;
-                                });
-                              },
-                              child: Text(
-                                _isLogin
-                                    ? "Create an account"
-                                    : "I already have an account",
-                                style: TextStyle(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onPrimaryContainer,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                    child: _isAuthenticating
+                        ? Center(
+                            child: SizedBox(
+                              width: double.infinity,
+                              height: 150,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const CircularProgressIndicator(),
+                                  const SizedBox(
+                                    height: 30,
+                                  ),
+                                  Text(
+                                    "Authenticating user...",
+                                    style: TextStyle(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onBackground),
+                                  ),
+                                ],
                               ),
                             ),
                           )
-                        ],
-                      ),
-                    ),
+                        : Form(
+                            key: _formKey,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (!_isLogin)
+                                  UserImagePicker(
+                                    onPickedImage: (pickedImage) {
+                                      _selectedImage = pickedImage;
+                                    },
+                                  ),
+                                TextFormField(
+                                  validator: (value) {
+                                    if (value == null ||
+                                        value.trim().isEmpty ||
+                                        !value.contains("@")) {
+                                      return "Please enter a valid email address";
+                                    }
+                                    return null;
+                                  },
+                                  onSaved: (value) {
+                                    _enteredEmail = value!;
+                                  },
+                                  textCapitalization: TextCapitalization.none,
+                                  autocorrect: false,
+                                  keyboardType: TextInputType.emailAddress,
+                                  decoration: const InputDecoration(
+                                      labelText: "Email Address"),
+                                ),
+                                const SizedBox(
+                                  height: 20,
+                                ),
+                                TextFormField(
+                                  validator: (value) {
+                                    if (value == null ||
+                                        value.trim().isEmpty ||
+                                        value.trim().length < 6) {
+                                      return "Password must be at least 6 character long";
+                                    }
+                                    return null;
+                                  },
+                                  onSaved: (value) {
+                                    _enteredPassword = value!;
+                                  },
+                                  obscureText: !isVisible,
+                                  decoration: InputDecoration(
+                                    suffixIcon: IconButton(
+                                      onPressed: () {
+                                        changeVisibleState();
+                                      },
+                                      icon: isVisible
+                                          ? const Icon(Icons.visibility)
+                                          : const Icon(Icons.visibility_off),
+                                    ),
+                                    labelText: "Password",
+                                  ),
+                                ),
+                                const SizedBox(
+                                  height: 25,
+                                ),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Theme.of(context)
+                                                  .colorScheme
+                                                  .brightness ==
+                                              Brightness.light
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                    ),
+                                    onPressed: () {
+                                      _submit();
+                                    },
+                                    child: Text(
+                                      _isLogin ? "Login" : "Signup",
+                                      style: TextStyle(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onInverseSurface,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(
+                                  height: 12,
+                                ),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Theme.of(context)
+                                          .colorScheme
+                                          .background,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _isLogin = !_isLogin;
+                                      });
+                                    },
+                                    child: Text(
+                                      _isLogin
+                                          ? "Create an account"
+                                          : "I already have an account",
+                                      style: TextStyle(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onPrimaryContainer,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
                   ),
                 ),
               ),
