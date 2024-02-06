@@ -9,6 +9,9 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   bool isVisible = false;
+  var _enteredEmail = "";
+  var _enteredPassword = "";
+  final _formKey = GlobalKey<FormState>();
 
   void changeVisibleState() {
     setState(() {
@@ -16,10 +19,21 @@ class _AuthScreenState extends State<AuthScreen> {
     });
   }
 
+  var _isLogin = true;
+
+  void _submit() {
+    final isValidFormInput = _formKey.currentState!.validate();
+    if (isValidFormInput) {
+      _formKey.currentState!.save();
+      print(_enteredEmail);
+      print(_enteredPassword);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.primary,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: Center(
         child: SingleChildScrollView(
           child: Column(
@@ -29,14 +43,14 @@ class _AuthScreenState extends State<AuthScreen> {
                 "Flutter Chat Application",
                 style: TextStyle(
                     fontSize: Theme.of(context).textTheme.titleLarge!.fontSize,
-                    color: Theme.of(context).colorScheme.onPrimary,
+                    color: Theme.of(context).colorScheme.onBackground,
                     fontWeight: FontWeight.bold),
               ),
               Text(
                 "Developed by Diego Auza",
                 style: TextStyle(
                     fontSize: Theme.of(context).textTheme.bodySmall!.fontSize,
-                    color: Theme.of(context).colorScheme.onPrimary,
+                    color: Theme.of(context).colorScheme.onBackground,
                     fontWeight: FontWeight.w600),
               ),
               Container(
@@ -46,7 +60,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       color: Theme.of(context).colorScheme.outline,
                       width: 5,
                     ),
-                    color: Theme.of(context).colorScheme.onPrimaryContainer),
+                    color: Theme.of(context).colorScheme.onBackground),
                 margin: const EdgeInsets.only(
                   top: 30,
                   bottom: 20,
@@ -57,25 +71,49 @@ class _AuthScreenState extends State<AuthScreen> {
                 child: Image.asset("assets/chat.png"),
               ),
               Card(
+                color: Theme.of(context).colorScheme.outlineVariant,
                 margin: const EdgeInsets.all(20),
                 child: SingleChildScrollView(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Form(
+                      key: _formKey,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           TextFormField(
+                            validator: (value) {
+                              if (value == null ||
+                                  value.trim().isEmpty ||
+                                  !value.contains("@")) {
+                                return "Please enter a valid email address";
+                              }
+                              return null;
+                            },
+                            onSaved: (value) {
+                              _enteredEmail = value!;
+                            },
                             textCapitalization: TextCapitalization.none,
                             autocorrect: false,
                             keyboardType: TextInputType.emailAddress,
                             decoration: const InputDecoration(
                                 labelText: "Email Address"),
                           ),
-                          Container(
+                          const SizedBox(
                             height: 20,
                           ),
                           TextFormField(
+                            validator: (value) {
+                              if (value == null ||
+                                  value.trim().isEmpty ||
+                                  value.trim().length < 6) {
+                                return "Password must be at least 6 character long";
+                              }
+                              return null;
+                            },
+                            onSaved: (value) {
+                              _enteredPassword = value!;
+                            },
                             obscureText: !isVisible,
                             decoration: InputDecoration(
                               suffixIcon: IconButton(
@@ -89,6 +127,58 @@ class _AuthScreenState extends State<AuthScreen> {
                               labelText: "Password",
                             ),
                           ),
+                          const SizedBox(
+                            height: 25,
+                          ),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    Theme.of(context).colorScheme.brightness ==
+                                            Brightness.light
+                                        ? Theme.of(context).colorScheme.primary
+                                        : Theme.of(context).colorScheme.primary,
+                              ),
+                              onPressed: () {
+                                _submit();
+                                setState(() {
+                                  _isLogin = !_isLogin;
+                                });
+                              },
+                              child: Text(
+                                _isLogin ? "Create an account" : "Login",
+                                style: TextStyle(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onInverseSurface,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 12,
+                          ),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    Theme.of(context).colorScheme.background,
+                              ),
+                              onPressed: () {},
+                              child: Text(
+                                _isLogin ? "Login" : "Signup",
+                                style: TextStyle(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onPrimaryContainer,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          )
                         ],
                       ),
                     ),
