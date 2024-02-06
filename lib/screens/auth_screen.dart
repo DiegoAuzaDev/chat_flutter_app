@@ -8,6 +8,14 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
+  bool isVisible = false;
+
+  void changeVisibleState() {
+    setState(() {
+      isVisible = !isVisible;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -68,9 +76,18 @@ class _AuthScreenState extends State<AuthScreen> {
                             height: 20,
                           ),
                           TextFormField(
-                            obscureText: true,
-                            decoration:
-                                const InputDecoration(labelText: "Password"),
+                            obscureText: !isVisible,
+                            decoration: InputDecoration(
+                              suffixIcon: IconButton(
+                                onPressed: () {
+                                  changeVisibleState();
+                                },
+                                icon: isVisible
+                                    ? const Icon(Icons.visibility)
+                                    : const Icon(Icons.visibility_off),
+                              ),
+                              labelText: "Password",
+                            ),
                           ),
                         ],
                       ),
