@@ -20,6 +20,7 @@ class _AuthScreenState extends State<AuthScreen> {
   bool isVisible = false;
   var _enteredEmail = "";
   var _enteredPassword = "";
+  var _enterUserName = "";
   File? _selectedImage;
   bool _isAuthenticating = false;
 
@@ -65,7 +66,7 @@ class _AuthScreenState extends State<AuthScreen> {
             .doc("${userCredentials.user!.uid}")
             .set(
           {
-            "username": "to be done...",
+            "username": _enterUserName,
             "email": _enteredEmail,
             "image_url": imgURl,
           },
@@ -187,6 +188,27 @@ class _AuthScreenState extends State<AuthScreen> {
                                   decoration: const InputDecoration(
                                       labelText: "Email Address"),
                                 ),
+                                if (!_isLogin)
+                                  const SizedBox(
+                                    height: 20,
+                                  ),
+                                if (!_isLogin)
+                                  TextFormField(
+                                    enableSuggestions: false,
+                                    decoration: const InputDecoration(
+                                        labelText: "User name"),
+                                    validator: (value) {
+                                      if (value == null ||
+                                          value.isEmpty ||
+                                          value.trim().length < 4) {
+                                        return "Please enter at least 4 characters";
+                                      }
+                                      return null;
+                                    },
+                                    onSaved: (value) {
+                                      _enterUserName = value!;
+                                    },
+                                  ),
                                 const SizedBox(
                                   height: 20,
                                 ),
@@ -237,7 +259,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                       _submit();
                                     },
                                     child: Text(
-                                      _isLogin ? "Login" : "Signup",
+                                      _isLogin ? "Login" : "Sign up",
                                       style: TextStyle(
                                         color: Theme.of(context)
                                             .colorScheme
