@@ -40,7 +40,7 @@ class _NewMessageState extends State<NewMessage> {
         "username": userData.data()!["username"],
         "image_url": userData.data()!["image_url"],
       });
-    } on FirebaseFirestore catch (error) {
+    } catch (error) {
       if (!context.mounted) {
         return;
       }

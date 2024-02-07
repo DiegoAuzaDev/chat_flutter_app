@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:chat_app/widgets/user_image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -50,7 +48,7 @@ class _AuthScreenState extends State<AuthScreen> {
         _isAuthenticating = true;
       });
       if (_isLogin) {
-        final userCredentials = await _firebase.signInWithEmailAndPassword(
+        await _firebase.signInWithEmailAndPassword(
             email: _enteredEmail, password: _enteredPassword);
       } else {
         final userCredentials = await _firebase.createUserWithEmailAndPassword(
@@ -63,7 +61,7 @@ class _AuthScreenState extends State<AuthScreen> {
         final imgURl = await firebaseStorageRef.getDownloadURL();
         await FirebaseFirestore.instance
             .collection("users")
-            .doc("${userCredentials.user!.uid}")
+            .doc(userCredentials.user!.uid)
             .set(
           {
             "username": _enterUserName,
